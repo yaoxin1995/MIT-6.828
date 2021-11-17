@@ -54,10 +54,58 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+/* 
+		       +------------+   |
+		       | arg 2      |   \
+		       +------------+    >- previous function's stack frame
+		       | arg 1      |   /
+		       +------------+   |
+		       | ret %eip   |   /
+		       +============+   
+		       | saved %ebp |   \
+		%ebp-> +------------+   |
+		       |            |   |
+		       |   local    |   \
+		       | variables, |    >- current function's stack frame
+		       |    etc.    |   /
+		       |            |   |
+		       |            |   |
+		%esp-> +------------+   /
+		
+
+		Note: %ebp contain a pointer to the stack possition which stores the saved %ebp
+		
+ */
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
+	// Your code here.cprintf
+
+	uint32_t *current_ebp;
+	uint32_t *eip;
+	uint32_t i;
+	uint32_t *arg_arry;
+	
+
+	current_ebp = (uint32_t*)read_ebp();
+
+
+	while (current_ebp != 0) {
+		eip = current_ebp + 1;
+
+		cprintf("ebp %x  eip %x  args ", current_ebp, *eip);
+
+		arg_arry = current_ebp + 2;
+
+		for (i = 0; i < 5; i++) {
+			cprintf("%08x ", arg_arry[i]);
+		}
+
+		cprintf("\n");
+
+		current_ebp = (uint32_t*)*current_ebp;
+	}
+
 	return 0;
 }
 
