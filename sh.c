@@ -50,6 +50,7 @@ runcmd(struct cmd *cmd)
   struct redircmd *rcmd;
   char *newenviron[] = { NULL };
   char *char_cmd;
+  mode_t mode = S_IWOTH | S_IROTH | S_IXOTH | S_IRGRP | S_IWGRP | S_IXGRP | S_IRUSR | S_IWUSR | S_IXUSR;
 
   if(cmd == 0)
     _exit(0);
@@ -77,9 +78,13 @@ runcmd(struct cmd *cmd)
     //fprintf(stderr, "redir not implemented\n");
     // Your code here ...
 
-    if (cmd->type == '<') {
 
-    }
+    if (close(rcmd->fd) == -1)
+        fprintf(stderr, "close system call failed\n");
+        
+    if (open(rcmd->file, rcmd->flags, mode) < 0)
+        fprintf(stderr, "open system call failed\n");
+
     runcmd(rcmd->cmd);
     break;
 
