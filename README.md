@@ -1,6 +1,6 @@
 # Homework1
 
-# Exercise: What is on the stack?
+## Exercise: What is on the stack?
 While stopped at the above breakpoint, look at the registers and the stack contents:
 
 
