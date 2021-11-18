@@ -1,2 +1,10 @@
-# MIT-6.828
-6.828 teaches the fundamentals of engineering operating systems. You will study, in detail, virtual memory, kernel and user mode, system calls, threads, context switches, interrupts, interprocess communication, coordination of concurrent activities, and the interface between software and hardware. Most importantly, you will study the interactions between these concepts, and how to manage the complexity introduced by the interactions.  6.828 is organized in three parts: lectures, readings, and a sequence of programming labs. The lectures and readings familiarize you with the main concepts. The labs lead you to understand the concepts at a deep level, since you will build an operating system from the ground up. After the labs you will appreciate the meaning of design goals such as "reducing complexity" and "conceptual integrity".
+# Homework1
+
+```
+0x7bdc:	0x00007d97	0x00000000	0x00000000	0x00000000
+0x7bec:	0x00000000	0x00000000	0x00000000	0x00000000
+0x7bfc:	0x00007c4d	0x8ec031fa	0x8ec08ed8	0xa864e4d0
+0x7c0c:	0xb0fa7502	0xe464e6d1	0x7502a864	0xe6dfb0fa
+0x7c1c:	0x16010f60	0x200f7c78	0xc88366c0	0xc0220f01
+0x7c2c:	0x087c31ea	0x10b86600	0x8ed88e00	0x66d08ec0
+```
