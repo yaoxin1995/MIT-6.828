@@ -1,6 +1,12 @@
 # Homework1
 
+# Exercise: What is on the stack?
+While stopped at the above breakpoint, look at the registers and the stack contents:
+
+
 ```
+(gdb) x/24x $esp
+
 0x7bdc:	0x00007d97	0x00000000	0x00000000	0x00000000
 0x7bec:	0x00000000	0x00000000	0x00000000	0x00000000
 0x7bfc:	0x00007c4d	0x8ec031fa	0x8ec08ed8	0xa864e4d0
