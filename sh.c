@@ -49,6 +49,7 @@ runcmd(struct cmd *cmd)
   struct pipecmd *pcmd;
   struct redircmd *rcmd;
   char *newenviron[] = { NULL };
+  char *char_cmd;
 
   if(cmd == 0)
     _exit(0);
@@ -64,7 +65,8 @@ runcmd(struct cmd *cmd)
       _exit(0);
     //fprintf(stderr, "exec not implemented\n");
     // Your code here ...
-    execve("/bin/ls", ecmd->argv, newenviron);
+    //ecmd->argv[0] = strcat("/bin", ecmd->argv[0]);
+    execve(ecmd->argv[0], ecmd->argv, newenviron);
     fprintf(stderr, "exec not work\n");
 
     break;
@@ -72,8 +74,12 @@ runcmd(struct cmd *cmd)
   case '>':
   case '<':
     rcmd = (struct redircmd*)cmd;
-    fprintf(stderr, "redir not implemented\n");
+    //fprintf(stderr, "redir not implemented\n");
     // Your code here ...
+
+    if (cmd->type == '<') {
+
+    }
     runcmd(rcmd->cmd);
     break;
 
