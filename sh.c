@@ -51,6 +51,7 @@ runcmd(struct cmd *cmd)
   char *newenviron[] = { NULL };
   char *char_cmd;
   mode_t mode = S_IWOTH | S_IROTH | S_IXOTH | S_IRGRP | S_IWGRP | S_IXGRP | S_IRUSR | S_IWUSR | S_IXUSR;
+  pid_t cpid;
 
   if(cmd == 0)
     _exit(0);
@@ -90,8 +91,113 @@ runcmd(struct cmd *cmd)
 
   case '|':
     pcmd = (struct pipecmd*)cmd;
-    fprintf(stderr, "pipe not implemented\n");
+    //fprintf(stderr, "pipe not implemented\n");
     // Your code here ...
+    // pipefd[0] refers to the read end of the pipe.  pipefd[1] refers to the write end of the pipe.
+
+    //     If no data is available, a read on a pipe waits for either data to be written or all
+    // file descriptors referring to the write end to be closed; in the latter case, read will return 0, 
+    //just as if the end of a data file had been reached. The fact that read blocks
+    // until it is impossible for new data to arrive is one reason that it’s important for the
+    // child to close the write end of the pipe before executing wc above: if one of wc’s file
+    // descriptors referred to the write end of the pipe, wc would never see end-of-file
+
+    if (pipe(p) == -1) {
+        fprintf(stderr, "pipe system call failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    cpid = fork();
+    if (cpid == -1) {
+        fprintf(stderr, "fork system call failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (cpid == 0) { /**/
+        
+
+        // close write end of the pipe
+        if (close(p[1]) == -1) {
+            fprintf(stderr, "close system call 4 failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+
+        // close stdin in child
+        if (close(0) == -1) {
+            fprintf(stderr, "close system call 5 failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+
+        // dup read end of pipe to fd 0
+        if (dup(p[0]) == -1) {
+            fprintf(stderr, "dup system call 2 failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+
+        // close read end of the pipe
+        if (close(p[0]) == -1) {
+            fprintf(stderr, "close system call 6 failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+        runcmd(pcmd->right);
+
+    }else {
+        if (close(p[0]) == -1) {
+            fprintf(stderr, "close system call 1 failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+        if (close(1) == -1) {
+            fprintf(stderr, "close system call 2 failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+        if (dup(p[1]) == -1) {
+            fprintf(stderr, "dup system call 1 failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+        if (close(p[1]) == -1) {
+            fprintf(stderr, "close system call 3 failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+        runcmd(pcmd->left);
+    }
+
+
+    // alternative
+    // pipe(p);
+    // 	// pipe 0 read 1 write
+    // pcmd = (struct pipecmd*)cmd;
+    // // Your code here ...
+    // if (fork1() == 0) {
+	// 	// left pipe
+	// 	// standard output is redirected to write end of pipe
+	// 	close(1);
+	// 	dup(p[1]);
+	// 	close(p[0]);
+	// 	close(p[1]);
+	// 	runcmd(pcmd->left);
+	// }
+	// wait(&r);
+	
+	// if (fork1() == 0) {
+	// 	// standard input is redirected to read end of pipe
+	// 	close(0);
+	// 	dup(p[0]);
+	// 	close(p[0]);
+	// 	close(p[1]);
+	// 	runcmd(pcmd->right);
+	// }
+	// close(p[0]);
+	// close(p[1]);
+	// wait(&r);
+        
     break;
   }    
   _exit(0);
