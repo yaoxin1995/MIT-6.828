@@ -24,6 +24,7 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+	 { "backtrace", "Display backtrace info", mon_backtrace },
 };
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -54,10 +55,67 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+/* 
+		       +------------+   |
+		       | arg 2      |   \
+		       +------------+    >- previous function's stack frame
+		       | arg 1      |   /
+		       +------------+   |
+		       | ret %eip   |   /
+		       +============+   
+		       | saved %ebp |   \
+		%ebp-> +------------+   |
+		       |            |   |
+		       |   local    |   \
+		       | variables, |    >- current function's stack frame
+		       |    etc.    |   /
+		       |            |   |
+		       |            |   |
+		%esp-> +------------+   /
+		
+
+		Note: %ebp contain a pointer to the stack possition which stores the saved %ebp
+		
+ */
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
+	// Your code here.cprintf
+
+	uint32_t *current_ebp;
+	uint32_t *eip;
+	uint32_t i;
+	uint32_t *arg_arry;
+	struct Eipdebuginfo info;
+	
+
+	current_ebp = (uint32_t*)read_ebp();
+
+
+	while (current_ebp != 0) {
+		eip = current_ebp + 1;
+
+		cprintf("ebp %x  eip %x  args ", current_ebp, *eip);
+
+		arg_arry = current_ebp + 2;
+
+		for (i = 0; i < 5; i++) {
+			cprintf("%08x ", arg_arry[i]);
+		}
+
+		cprintf("\n");
+
+		debuginfo_eip(*eip, &info);
+
+		cprintf("       %s:%d: ", info.eip_file, info.eip_line);
+
+		cprintf("%.*s+", info.eip_fn_namelen, info.eip_fn_name);
+
+		cprintf("%d\n", eip - info.eip_fn_addr);
+
+		current_ebp = (uint32_t*)*current_ebp;
+	}
+
 	return 0;
 }
 
