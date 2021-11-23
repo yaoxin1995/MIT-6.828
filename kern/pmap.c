@@ -109,41 +109,27 @@ boot_alloc(uint32_t n)
 	// to a multiple of PGSIZE.
 	//
 	// LAB 2: Your code here.
+	if (!n)
+		return nextfree;
 
-	if (n > 0) {
-		temp = nextfree + n;
+	
+	temp = nextfree + n;
 
-		temp = ROUNDUP(temp, PGSIZE);
+	temp = ROUNDUP(temp, PGSIZE);
 
-		assert((uint32_t)temp % PGSIZE == 0);
+	assert((uint32_t)temp % PGSIZE == 0);
 
-		pa_t = PADDR(temp);
+	pa_t = PADDR(temp);
 
-		pa_t_pagenum = pa_t / PGSIZE;
+	pa_t_pagenum = pa_t / PGSIZE;
 
-		if (pa_t_pagenum > npages)
-			panic("boot_alloc: exceeding the total physical memory, n:%d, pa_n_page: %d, npages: %d",\
-			 n, pa_t_pagenum, npages);
-
-		result = nextfree;
-		nextfree = temp;
-
-	} else if (n == 0) {
-		temp = nextfree + PGSIZE;
-
-		assert((uint32_t)temp % PGSIZE == 0);
-
-		pa_t = PADDR(temp);
-
-		pa_t_pagenum = pa_t / PGSIZE;
-
-		if (pa_t_pagenum > npages)
-			panic("boot_alloc: exceeding the total physical memory, n:%d, pa_n_page: %d, npages: %d",\
+	if (pa_t_pagenum > npages)
+		panic("boot_alloc: exceeding the total physical memory, n:%d, pa_n_page: %d, npages: %d",\
 			n, pa_t_pagenum, npages);
-		
-		result = nextfree;
-		nextfree = temp;
-	}
+
+	result = nextfree;
+	nextfree = temp;
+
 	return result;
 }
 
@@ -160,7 +146,10 @@ void
 mem_init(void)
 {
 	uint32_t cr0;
-	size_t n;
+	size_t n, i;
+	struct PageInfo *page;
+	char *start;
+	
 
 	// Find out how much memory the machine has (npages & npages_basemem).
 	i386_detect_memory();
@@ -216,6 +205,10 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
+	boot_map_region(kern_pgdir, UPAGES, PTSIZE, PADDR(pages),  PTE_U | PTE_P);
+
+
+
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -228,6 +221,10 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
+	boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
+
+
+
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -237,6 +234,7 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+	boot_map_region(kern_pgdir, KERNBASE, 0x10000000, 0, PTE_W);
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
@@ -668,6 +666,7 @@ check_page_free_list(bool only_low_memory)
 		assert(page2pa(pp) != EXTPHYSMEM - PGSIZE);
 		assert(page2pa(pp) != EXTPHYSMEM);
 		assert(page2pa(pp) < EXTPHYSMEM || (char *) page2kva(pp) >= first_free_page);
+
 
 		if (page2pa(pp) < EXTPHYSMEM)
 			++nfree_basemem;
