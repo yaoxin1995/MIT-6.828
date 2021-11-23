@@ -72,4 +72,6 @@ Answer: `uintptr_t`
 4. How much space overhead is there for managing memory, if we actually had the maximum amount of physical memory? How is this overhead broken down?
   Overheads:
   + physical memory allocated for `struc PageInfo`: 4MB
-  + 2-level page table: max. 1024*1024 (page table entry) * 4 Bytes (page table entry size) + 1024*8 Bytes (page directory size)
+  + 2-level page table: max. 1024*1024 (page table entry) * 4 Bytes (page table entry size) + 1024*8 Bytes (page directory size) 
+
+  
