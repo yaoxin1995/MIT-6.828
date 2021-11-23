@@ -3,6 +3,7 @@
 ## Key points
 
 ### Address translation procedure
+```
 
            Selector  +--------------+         +-----------+
           ---------->|              |         |           |
@@ -12,6 +13,7 @@ Software             |              |-------->|           |---------->  RAM
           ---------->|              |         |           |
                      +--------------+         +-----------+
             Virtual(logic)            Linear                Physical
+```
 
 ### Addresses format
 
@@ -52,7 +54,7 @@ Answer: `uintptr_t`
 + CPU does not allow user program to read kernel memory. Specifically MMU use the access bit PTE_S to protect kernel memory from reading by user level programs. When user-lever programs try to read kernel memory, MMU raises a fault informing OS to kill the program.
 
 3. What is the maximum amount of physical memory that this operating system can support? Why?
-
+```
   ULIM, MMIOBASE -->  +------------------------------+ 0xef800000
                       |  Cur. Page Table (User R-)   | R-/R-  PTSIZE
      UVPT      ---->  +------------------------------+ 0xef400000
@@ -60,6 +62,8 @@ Answer: `uintptr_t`
      UPAGES    ---->  +------------------------------+ 0xef000000
                       |           RO ENVS            | R-/R-  PTSIZE
   UTOP,UENVS ------>  +------------------------------+ 0xeec00000
+
+```
  
 + 2GB
 
