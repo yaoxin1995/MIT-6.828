@@ -51,7 +51,7 @@ Answer: `uintptr_t`
 
 2. We have placed the kernel and user environment in the same address space. Why will user programs not be able to read or write the kernel's memory? What specific mechanisms protect the kernel memory?
 
-+ CPU does not allow user program to read kernel memory. Specifically MMU use the access bit PTE_S to protect kernel memory from reading by user level programs. When user-lever programs try to read kernel memory, MMU raises a fault informing OS to kill the program.
+  + CPU does not allow user program to read kernel memory. Specifically MMU use the access bit PTE_S to protect kernel memory from reading by user level programs. When user-lever programs try to read kernel memory, MMU raises a fault informing OS to kill the program.
 
 3. What is the maximum amount of physical memory that this operating system can support? Why?
 ```
@@ -65,11 +65,11 @@ Answer: `uintptr_t`
 
 ```
  
-+ 2GB
+  + 2GB
 
-+ The OS use `struc PageInfo` to represent a 4 KiB physical memory. Each the size `struc PageInfo` is 8 bytes. From the figure we can see that OS assign memory region (0xef000000-0xef400000 ----> 4MB) to record a array of `struc PageInfo` so that processes can read pages anytime they want. Therefore, OS can has max. 4MB/8Byte = 0.5M = 524288 pages, which means 524288 * 4K (2GB) physical memory.
+  + The OS use `struc PageInfo` to represent a 4 KiB physical memory. Each the size `struc   PageInfo` is 8 bytes. From the figure we can see that OS assign memory region (0xef000000-0xef400000 ----> 4MB) to record a array of `struc PageInfo` so that processes can read pages anytime they want. Therefore, OS can has max. 4MB/8Byte = 0.5M = 524288 pages, which means 524288 * 4K (2GB) physical memory.
 
 4. How much space overhead is there for managing memory, if we actually had the maximum amount of physical memory? How is this overhead broken down?
   Overheads:
-    + physical memory allocated for `struc PageInfo`: 4MB
-    + 2-level page table: max. 1024*1024 (page table entry) * 4 Bytes (page table entry size) + 1024*8 Bytes (page directory size)
+  + physical memory allocated for `struc PageInfo`: 4MB
+  + 2-level page table: max. 1024*1024 (page table entry) * 4 Bytes (page table entry size) + 1024*8 Bytes (page directory size)
