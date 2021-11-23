@@ -13,6 +13,7 @@ struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
+int mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm);
 
 void
 tvinit(void)
@@ -36,6 +37,12 @@ idtinit(void)
 void
 trap(struct trapframe *tf)
 {
+
+	uint a, addr;
+	char *memory;
+
+
+
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
       exit();
@@ -86,6 +93,29 @@ trap(struct trapframe *tf)
               tf->trapno, cpuid(), tf->eip, rcr2());
       panic("trap");
     }
+
+		if(tf->trapno == T_PGFLT) {
+			
+			addr = rcr2();
+
+      a = PGROUNDDOWN(addr);
+
+			memory = kalloc();
+    	if(memory == 0)
+      	panic("trap: allocate memory failed for lazy allocation");
+    	memset(memory, 0, PGSIZE);
+
+			if(mappages(myproc()->pgdir, (char*)a, PGSIZE, V2P(memory), PTE_W|PTE_U) < 0){
+  	    
+	      kfree(memory);
+				panic("trap: insert page failed for lazy allocation");
+				return;
+    	}
+			return;
+    }
+    
+
+
     // In user space, assume process misbehaved.
     cprintf("pid %d %s: trap %d err %d on cpu %d "
             "eip 0x%x addr 0x%x--kill proc\n",
