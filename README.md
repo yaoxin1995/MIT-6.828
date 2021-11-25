@@ -7,13 +7,16 @@
 
 + Example instruction	What it does
 ```
-pushl %eax	subl $4, %esp
-movl %eax, (%esp)
-popl %eax	movl (%esp), %eax
-addl $4, %esp
-call 0x12345	pushl %eip (*)
-movl $0x12345, %eip (*)
-ret	popl %eip (*)
+pushl %eax	            subl $4, %esp
+                        movl %eax, (%esp)
+
+popl %eax	            movl (%esp), %eax
+                        addl $4, %esp
+
+call 0x12345	        pushl %eip (*)
+                        movl $0x12345, %eip (*)
+                        
+ret	                    popl %eip (*)
 ```
 + GCC dictates how the stack is used. Contract between caller and callee on x86:
     + at entry to a function (i.e. just after call):

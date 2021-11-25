@@ -40,7 +40,7 @@ trap(struct trapframe *tf)
 
 	uint a, addr;
 	char *memory;
-	uint oldeip;
+
 
 
 
@@ -60,16 +60,18 @@ trap(struct trapframe *tf)
       acquire(&tickslock);
       ticks++;
 
-      if(myproc() != 0 && (tf->cs & 3) == 3 && myproc()->alarmhandler) {
+      if(myproc() != 0 && (tf->cs & 3) == 3) {
 
       	if (!myproc()->ticksleft) {
 				myproc()->ticksleft = myproc()->alarmticks;
-				oldeip = tf->eip;
-				tf->eip = myproc()->alarmhandler;
 
-        }
+				tf->esp = tf->esp - 4;
+				*(uint *)tf->esp = tf->eip;
 
-		  myproc()->ticksleft--;
+				tf->eip = (uint)myproc()->alarmhandler;
+				
+        } else
+				myproc()->ticksleft--;
 
       }
       

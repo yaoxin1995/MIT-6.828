@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include <stddef.h>
 
 struct {
   struct spinlock lock;
@@ -114,7 +115,7 @@ found:
 
   p->alarmhandler = NULL;
   p->alarmticks = 0;
-  p->passedtricks = 0;
+  p->ticksleft = 0;
 
   return p;
 }
