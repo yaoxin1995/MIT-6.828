@@ -40,6 +40,7 @@ SECTIONS
 	}
 
 	/* Adjust the address for the data segment to the next page */
+	/* insert padding bytes until current location becomes aligned on 4096 byte boundary*/
 	. = ALIGN(0x1000);
 
 	/* The data segment */
