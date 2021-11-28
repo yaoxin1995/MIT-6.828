@@ -35,6 +35,12 @@
 
 4. EFLAGS register: The systems flags of the EFLAGS register control I/O, maskable interrupts, debugging, task switching, and enabling of virtual 8086 execution in a protected, multitasking environment. These flags are highlighted in Figure 4-1.
 
+
+### GDB commands
+
+1. Set breakpoints
+  + `b *0x...` set a breakpoint at address 0x...
+
 ## Questions
 
 

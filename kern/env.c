@@ -377,7 +377,6 @@ load_icode(struct Env *e, uint8_t *binary)
 
 	// LAB 3: Your code here.
 	struct Proghdr *ph, *eph;
-	pde_t *temp_kern_pgdir = kern_pgdir;
 	struct Elf *elf_header = (struct Elf *)binary;
 	struct PageInfo *ustack;  
 	int r;
@@ -389,10 +388,12 @@ load_icode(struct Env *e, uint8_t *binary)
 
 	// temporaly forcing the kernel page table to e's page directory
 	// so that we can load data in ELF directly to proper position 
-	kern_pgdir = e->env_pgdir;
+
+	
 
 	ph = (struct Proghdr *) ((uint8_t *) elf_header + elf_header->e_phoff);
 	eph = ph + elf_header->e_phnum;
+	lcr3(PADDR(e->env_pgdir));
 	for (; ph < eph; ph++) {
 		if (ph->p_type != ELF_PROG_LOAD)
 			continue;
@@ -404,6 +405,7 @@ load_icode(struct Env *e, uint8_t *binary)
 		if (ph->p_filesz)
 			memcpy((intptr_t *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
 	}
+	lcr3(PADDR(kern_pgdir));
 
 	ustack = page_alloc(ALLOC_ZERO);
 	r = page_insert(e->env_pgdir, ustack, (intptr_t *)(USTACKTOP - PGSIZE), PTE_W | PTE_U);
@@ -413,7 +415,7 @@ load_icode(struct Env *e, uint8_t *binary)
 
 	e->env_tf.tf_eip = elf_header->e_entry;
 
-	kern_pgdir = temp_kern_pgdir;
+
 }
 
 
@@ -564,7 +566,9 @@ env_run(struct Env *e)
 	curenv = e;
 	curenv->env_status = ENV_RUNNING;
 	curenv->env_runs++;
-	lcr3((intptr_t)curenv->env_pgdir);
+
+
+	lcr3(PADDR(curenv->env_pgdir));
 
 	env_pop_tf(&curenv->env_tf);
 
