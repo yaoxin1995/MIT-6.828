@@ -109,4 +109,21 @@ execution at the saved `%eip`
 I didn't have to do anything extra to do. It triggers an Interrupt 13 because only the kernel running in Ring 0 can trigger the handler of page fault as we defined above. This meets the "Executing the INT n instruction when the CPL is greater than the DPL of the referenced interrupt, trap, or task gate." condition, so the processor triggers a General Protection Exception (Interrupt 13)
 
 If we allow a page fault to be triggered by a user program like softint. It can manipulate virtual memory and may cause serious security issues.
-  
+
+
+
+### PART2
+
+3. The break point test case will either generate a break point exception or a general protection fault depending on how you initialized the break point entry in the IDT (i.e., your call to `SETGATE` from `trap_init`). Why? How do you need to set it up in order to get the breakpoint exception to work as specified above and what incorrect setup would cause it to trigger a general protection fault?
+
+If I set the DPL of the break point entry in the IDT to 0, the processor would generate a general protection fault for the user level program `breakpoint`. Because the processor only executing the INT n instruction when `CPL` in `%cs is <= DPL`, otherwise the processor generate a general protection fault.
+
+To correct it, we need to give the DPL of the break point entry in IDT 3 instead of 0 (trap.c: 93):
+```
+	SETGATE(idt[3], 0, GD_KT, VECTOR3, 3);
+```
+
+
+4. What do you think is the point of these mechanisms, particularly in light of what the user/softint test program does?
+
+These mechanisms restrict what user programs can do, therefore, they protect the kernel from being interfered or corrupted. They also isolate the kernel from user programs and it enhances the system's robustness.
