@@ -51,6 +51,7 @@ SECTIONS
 	.bss : {
 		PROVIDE(edata = .);
 		*(.bss)
+		*(COMMON)
 		PROVIDE(end = .);
 		BYTE(0)
 	}
