@@ -45,11 +45,64 @@
 
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
+
  */
 
 
+
+TRAPHANDLER_NOEC(VECTOR0, T_DIVIDE)
+
+TRAPHANDLER_NOEC(VECTOR1, T_DEBUG)
+
+TRAPHANDLER_NOEC(VECTOR2, T_NMI)
+
+TRAPHANDLER_NOEC(VECTOR3, T_BRKPT)
+
+TRAPHANDLER_NOEC(VECTOR4, T_OFLOW)
+
+TRAPHANDLER_NOEC(VECTOR5, T_BOUND)
+
+TRAPHANDLER_NOEC(VECTOR6, T_ILLOP)
+
+TRAPHANDLER_NOEC(VECTOR7, T_DEVICE)
+
+TRAPHANDLER(VECTOR8, T_DBLFLT)
+
+TRAPHANDLER(VECTOR10, T_TSS)
+
+TRAPHANDLER(VECTOR11, T_SEGNP)
+
+TRAPHANDLER(VECTOR12, T_STACK)
+
+TRAPHANDLER(VECTOR13, T_GPFLT)
+
+TRAPHANDLER(VECTOR14, T_PGFLT)
+
+TRAPHANDLER_NOEC(VECTOR16, T_FPERR)
+
+TRAPHANDLER(VECTOR17, T_ALIGN)
+
+TRAPHANDLER_NOEC(VECTOR18, T_MCHK)
+
+TRAPHANDLER_NOEC(VECTOR19, T_SIMDERR)
 
 /*
  * Lab 3: Your code here for _alltraps
  */
+.globl _alltraps
+_alltraps:
+  # Build trap frame.
+  pushl %ds
+  pushl %es
 
+  pushal
+  
+  # Set up data segments.
+  movw $GD_KD, %ax
+  movw %ax, %ds
+  movw %ax, %es
+
+  # Call trap(tf), where tf=%esp
+  pushl %esp
+  call trap
+;   addl $4, %esp

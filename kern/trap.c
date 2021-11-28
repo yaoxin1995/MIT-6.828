@@ -64,7 +64,61 @@ trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	// LAB 3: Your code here.
+	extern void VECTOR0();
+	extern void VECTOR1();
+	extern void VECTOR2();
+	extern void VECTOR3();
+	extern void VECTOR4();
+	extern void VECTOR5();
+	extern void VECTOR6();
+	extern void VECTOR7();
+	extern void VECTOR8();
+	extern void VECTOR10();
+	extern void VECTOR11();
+	extern void VECTOR12();
+	extern void VECTOR13();
+	extern void VECTOR14();
+	extern void VECTOR16();
+	extern void VECTOR17();
+	extern void VECTOR18();
+	extern void VECTOR19();
+
+	// LAB 3: Your code here. 
+    SETGATE(idt[0], 0, GD_KT, VECTOR0, 0);
+
+	SETGATE(idt[1], 0, GD_KT, VECTOR1, 0);
+
+	SETGATE(idt[2], 0, GD_KT, VECTOR2, 0);
+
+	SETGATE(idt[3], 0, GD_KT, VECTOR3, 0);
+
+	SETGATE(idt[4], 0, GD_KT, VECTOR4, 0);
+
+	SETGATE(idt[5], 0, GD_KT, VECTOR5, 0);
+
+	SETGATE(idt[6], 0, GD_KT, VECTOR6, 0);
+
+	SETGATE(idt[7], 0, GD_KT, VECTOR7, 0);
+
+	SETGATE(idt[8], 0, GD_KT, VECTOR8, 0);
+
+	SETGATE(idt[10], 0, GD_KT, VECTOR10, 0);
+
+	SETGATE(idt[11], 0, GD_KT, VECTOR11, 0);
+
+	SETGATE(idt[12], 0, GD_KT, VECTOR12, 0);
+
+	SETGATE(idt[13], 0, GD_KT, VECTOR13, 0);
+
+	SETGATE(idt[14], 0, GD_KT, VECTOR14, 0);
+
+	SETGATE(idt[16], 0, GD_KT, VECTOR16, 0);
+
+	SETGATE(idt[17], 0, GD_KT, VECTOR17, 0);
+
+	SETGATE(idt[18], 0, GD_KT, VECTOR18, 0);
+
+	SETGATE(idt[19], 0, GD_KT, VECTOR19, 0);
 
 	// Per-CPU setup 
 	trap_init_percpu();
