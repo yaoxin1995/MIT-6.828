@@ -82,6 +82,7 @@ trap_init(void)
 	extern void VECTOR17();
 	extern void VECTOR18();
 	extern void VECTOR19();
+	extern void VECTOR48();
 
 	// LAB 3: Your code here. 
     SETGATE(idt[0], 0, GD_KT, VECTOR0, 0);
@@ -119,6 +120,8 @@ trap_init(void)
 	SETGATE(idt[18], 0, GD_KT, VECTOR18, 0);
 
 	SETGATE(idt[19], 0, GD_KT, VECTOR19, 0);
+
+	SETGATE(idt[T_SYSCALL], 1, GD_KT, VECTOR48, 3);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -198,12 +201,19 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
+	int32_t ret;
+
 	switch(tf->tf_trapno) {
 		case T_PGFLT:
 			page_fault_handler(tf);
 			return;
 		case T_BRKPT:
 			monitor(tf);
+			return;
+		case T_SYSCALL:
+			ret = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx,
+				tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+			tf->tf_regs.reg_eax = ret;
 			return;
 
 
@@ -258,6 +268,17 @@ trap(struct Trapframe *tf)
 }
 
 
+// Figure 5-6. Format of a Selector
+                        // 15                      4 3   0
+                        // +-------------------------+-+---+
+                        // |                         |T|   |
+                        // |           INDEX         | |RPL|
+                        // |                         |I|   |
+                        // +-------------------------+-+---+
+
+                        //  TI  - TABLE INDICATOR
+                        //  RPL - REQUESTOR'S PRIVILEGE LEVEL
+
 void
 page_fault_handler(struct Trapframe *tf)
 {
@@ -269,6 +290,8 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
+	if ((tf->tf_cs & 0x3) == 0)
+		panic("page fault happens in kernel mode");
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
