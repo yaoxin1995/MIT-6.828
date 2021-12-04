@@ -71,7 +71,64 @@ trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	// LAB 3: Your code here.
+	extern void VECTOR0();
+	extern void VECTOR1();
+	extern void VECTOR2();
+	extern void VECTOR3();
+	extern void VECTOR4();
+	extern void VECTOR5();
+	extern void VECTOR6();
+	extern void VECTOR7();
+	extern void VECTOR8();
+	extern void VECTOR10();
+	extern void VECTOR11();
+	extern void VECTOR12();
+	extern void VECTOR13();
+	extern void VECTOR14();
+	extern void VECTOR16();
+	extern void VECTOR17();
+	extern void VECTOR18();
+	extern void VECTOR19();
+	extern void VECTOR48();
+
+	// LAB 3: Your code here. 
+    SETGATE(idt[0], 0, GD_KT, VECTOR0, 0);
+
+	SETGATE(idt[1], 0, GD_KT, VECTOR1, 0);
+
+	SETGATE(idt[2], 0, GD_KT, VECTOR2, 0);
+
+	SETGATE(idt[3], 0, GD_KT, VECTOR3, 3);
+
+	SETGATE(idt[4], 0, GD_KT, VECTOR4, 0);
+
+	SETGATE(idt[5], 0, GD_KT, VECTOR5, 0);
+
+	SETGATE(idt[6], 0, GD_KT, VECTOR6, 0);
+
+	SETGATE(idt[7], 0, GD_KT, VECTOR7, 0);
+
+	SETGATE(idt[8], 0, GD_KT, VECTOR8, 0);
+
+	SETGATE(idt[10], 0, GD_KT, VECTOR10, 0);
+
+	SETGATE(idt[11], 0, GD_KT, VECTOR11, 0);
+
+	SETGATE(idt[12], 0, GD_KT, VECTOR12, 0);
+
+	SETGATE(idt[13], 0, GD_KT, VECTOR13, 0);
+
+	SETGATE(idt[14], 0, GD_KT, VECTOR14, 0);
+
+	SETGATE(idt[16], 0, GD_KT, VECTOR16, 0);
+
+	SETGATE(idt[17], 0, GD_KT, VECTOR17, 0);
+
+	SETGATE(idt[18], 0, GD_KT, VECTOR18, 0);
+
+	SETGATE(idt[19], 0, GD_KT, VECTOR19, 0);
+
+	SETGATE(idt[T_SYSCALL], 1, GD_KT, VECTOR48, 3);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -176,6 +233,23 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
+	int32_t ret;
+
+	switch(tf->tf_trapno) {
+		case T_PGFLT:
+			page_fault_handler(tf);
+			return;
+		case T_BRKPT:
+			monitor(tf);
+			return;
+		case T_SYSCALL:
+			ret = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx,
+				tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+			tf->tf_regs.reg_eax = ret;
+			return;
+
+
+	}
 
 	// Handle spurious interrupts
 	// The hardware sometimes raises these because of noise on the
@@ -260,6 +334,17 @@ trap(struct Trapframe *tf)
 }
 
 
+// Figure 5-6. Format of a Selector
+                        // 15                      4 3   0
+                        // +-------------------------+-+---+
+                        // |                         |T|   |
+                        // |           INDEX         | |RPL|
+                        // |                         |I|   |
+                        // +-------------------------+-+---+
+
+                        //  TI  - TABLE INDICATOR
+                        //  RPL - REQUESTOR'S PRIVILEGE LEVEL
+
 void
 page_fault_handler(struct Trapframe *tf)
 {
@@ -271,6 +356,8 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
+	if ((tf->tf_cs & 0x3) == 0)
+		panic("page fault happens in kernel mode");
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.

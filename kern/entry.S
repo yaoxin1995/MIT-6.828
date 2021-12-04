@@ -66,7 +66,8 @@ entry:
 	# (why is this okay?).  Jump up above KERNBASE before entering
 	# C code.
 	mov	$relocated, %eax
-	jmp	*%eax
+	# Indirect jump, %eax contains a absolute address, i.e,  Indirect JMP instructions specify an absolute address in the register eax
+	jmp	*%eax     
 relocated:
 
 	# Clear the frame pointer register (EBP)

@@ -20,4 +20,7 @@ void print_trapframe(struct Trapframe *tf);
 void page_fault_handler(struct Trapframe *);
 void backtrace(struct Trapframe *);
 
+#define T_BRKPT          3      // breakpoint
+#define T_PGFLT         14      // page fault
+
 #endif /* JOS_KERN_TRAP_H */
