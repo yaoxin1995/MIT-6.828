@@ -249,7 +249,7 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
-	boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
+	//boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
 
 
 
@@ -315,6 +315,18 @@ mem_init_mp(void)
 	//
 	// LAB 4: Your code here:
 
+	int i;
+	intptr_t start = KSTACKTOP;
+
+	for (i = 0; i < NCPU; i++) {
+		boot_map_region(kern_pgdir, start - KSTKSIZE, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
+		start = start - (KSTKSIZE + KSTKGAP);
+
+	}
+
+
+	
+
 }
 
 // --------------------------------------------------------------
@@ -365,6 +377,12 @@ page_init(void)
 
 	// [PGSIZE, npages_basemem * PGSIZE) is free.
 	for(i = 1; i < npages_basemem; i++) {
+		// Mark the physical page at MPENTRY_PADDR as in use
+		if (i*PGSIZE == MPENTRY_PADDR) {
+			pages[i].pp_ref = 1;
+			pages[i].pp_link = NULL;
+			continue;
+		}
 		pages[i].pp_ref = 0;
 		pages[i].pp_link = page_free_list;
 		page_free_list = &pages[i];
@@ -686,6 +704,7 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// value will be preserved between calls to mmio_map_region
 	// (just like nextfree in boot_alloc).
 	static uintptr_t base = MMIOBASE;
+	uintptr_t res;
 
 	// Reserve size bytes of virtual memory starting at base and
 	// map physical pages [pa,pa+size) to virtual addresses
@@ -705,7 +724,21 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+	//panic("mmio_map_region not implemented");
+	size = ROUNDUP(size, PGSIZE);
+
+	if ((base + size) > MMIOLIM)
+		panic("mmio_map_region, overflow");
+	
+	boot_map_region(kern_pgdir, base, size, pa, PTE_PCD | PTE_PWT | PTE_W);
+	
+	res = base;
+	base += size;
+
+	return (uintptr_t *)res;
+
+
+
 }
 
 static uintptr_t user_mem_check_addr;
