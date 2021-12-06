@@ -42,3 +42,18 @@
 The bootloader in `boot/boot.S` doesn't need such macro because it is an independent module linked to 0x7c00 which is addressable in real mode.
 
 If it were omitted in `kern/mpentry.S`. The APs will try to load code at high address, which is unaddressable in real mode
+
+
+### Q2: It seems that using the big kernel lock guarantees that only one CPU can run the kernel code at a time. Why do we still need separate kernel stacks for each CPU? Describe a scenario in which using a shared kernel stack will go wrong, even with the protection of the big kernel lock
+
+Assume CPU O is running in kernel mode. Now, an interrupt happens in CPU1, the CPU 1 trap into the kernel and push its info into the share the kernel stack. In this case CPU1 may overwrite info belonging to CPU 0 on the stack.
+
+
+### Q3: In your implementation of env_run() you should have called lcr3(). Before and after the call to lcr3(), your code makes references (at least it should) to the variable e, the argument to env_run. Upon loading the %cr3 register, the addressing context used by the MMU is instantly changed. But a virtual address (namely e) has meaning relative to a given address context--the address context specifies the physical address to which the virtual address maps. Why can the pointer e be dereferenced both before and after the addressing switch?
+
+In env_setup_vm(), the comment says the virtual address space of all environments is identical from UTOP to UVPT, as well as the address space of the kernel. The virtual address of e is always the same whatever the address space it is, so it can be dereferenced both before and after the addressing switch.
+
+
+### Q4: Whenever the kernel switches from one environment to another, it must ensure the old environment's registers are saved so they can be restored properly later. Why? Where does this happen?
+
+The context switch needs to ensure the environment can resume the execution at exactly where it stops as the switch has never happened. So all the registers need to be saved. They are pushed onto the stack when it triggers sys_yield() syscall, and then the trap handler (here it is kern/trap.c:trap()) will save them in env_tf. And they are restored by env_pop_tf() when env_run() is executed.
