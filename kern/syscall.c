@@ -97,6 +97,8 @@ sys_exofork(void)
 	child->env_status = ENV_NOT_RUNNABLE;
     child->env_tf = curenv->env_tf;
     child->env_tf.tf_regs.reg_eax = 0;  // return 0 to child
+
+	child->env_pgfault_upcall = 0;
 		
 	return child->env_id;
 }
@@ -152,7 +154,18 @@ static int
 sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
 	// LAB 4: Your code here.
-	panic("sys_env_set_pgfault_upcall not implemented");
+	int res;
+	struct Env *proc;
+
+	res = envid2env(envid, &proc, 1);
+	if(res < 0) {
+		cprintf("sys_env_set_status: envid2env failed: %e", res);
+		return res;
+	}
+
+	proc->env_pgfault_upcall = func;
+	
+	return res;
 }
 
 // Allocate a page of memory and map it at 'va' with permission
@@ -284,7 +297,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
 		return -E_INVAL;
 	}
 
-	if ( PGOFF(srcva) != 0 || PGOFF(dstva) != 0) {
+	if (PGOFF(srcva) != 0 || PGOFF(dstva) != 0) {
 		cprintf("sys_page_map: va is not page-aligned srcva: Ox%x, dstva: Ox%x", \
 		(intptr_t)srcva, (intptr_t)dstva);
 		return -E_INVAL;
@@ -460,6 +473,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_page_map((envid_t)a1, (void *)a2, (envid_t)a3, (void *)a4, a5);
 	case SYS_page_unmap:
 		return sys_page_unmap((envid_t)a1, (void *)a2);
+	case SYS_env_set_pgfault_upcall:
+		return sys_env_set_pgfault_upcall(a1, (void *)a2);
 	default:
 		return -E_INVAL;
 	}

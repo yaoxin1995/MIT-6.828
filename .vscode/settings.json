@@ -8,6 +8,7 @@
         "stdio.h": "c",
         "console.h": "c",
         "string.h": "c",
-        "x86.h": "c"
+        "x86.h": "c",
+        "lib.h": "c"
     }
 }

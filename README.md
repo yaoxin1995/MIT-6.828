@@ -57,3 +57,16 @@ In env_setup_vm(), the comment says the virtual address space of all environment
 ### Q4: Whenever the kernel switches from one environment to another, it must ensure the old environment's registers are saved so they can be restored properly later. Why? Where does this happen?
 
 The context switch needs to ensure the environment can resume the execution at exactly where it stops as the switch has never happened. So all the registers need to be saved. They are pushed onto the stack when it triggers sys_yield() syscall, and then the trap handler (here it is kern/trap.c:trap()) will save them in env_tf. And they are restored by env_pop_tf() when env_run() is executed.
+
+### why do user/faultalloc and user/faultallocbad behave differently?
+
+1. faultalloc
+faultalloc calls `cprintf("%s\n", (char*)0xDeadBeef);` and this causes the following:
+* the first character of the string located in 0xDeadBeef is attempted to be read by the environment.
+* a page fault occurs becase 0xDeadBeef is unmapped
+* the page fault handler that we have registered runs. During the run it maps the missing page and also populates the string (using the snprintf function)
+* execution returns back from where it faulted, and cprintf can resume printing to the screen because the memory is now mapped and even contains some data.
+2. faultallocbad
+faultallocbad calls `sys_cputs((char*)0xDEADBEEF, 4);` and this causes the following:
+* the memory in 0xDEADBEEF is not accessed by the environment, but is instead passed directly to the kernel through a system call. (notice that there was no page fault here and thus the handler has never ran).
+* During the handling of this system call, the kernel detects that the memory is unmapped and kills the environment. Therefore, nothing is printed.

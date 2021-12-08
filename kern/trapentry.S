@@ -98,6 +98,7 @@ _alltraps:
   pushl %ds
   pushl %es
 
+
   pushal
   
   # Set up data segments.
