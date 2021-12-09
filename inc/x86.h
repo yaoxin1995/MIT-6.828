@@ -248,6 +248,19 @@ read_tsc(void)
 	return tsc;
 }
 
+static inline void
+cli(void)
+{
+  asm volatile("cli");
+}
+
+
+static inline void
+sti(void)
+{
+  asm volatile("sti");
+}
+
 static inline uint32_t
 xchg(volatile uint32_t *addr, uint32_t newval)
 {

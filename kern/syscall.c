@@ -414,7 +414,77 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+	struct Env *target;
+	int res = 0;
+	struct PageInfo *src_page;
+	pte_t *src_pte;
+	
+	res = envid2env(envid, &target, 0);
+	if(res < 0) {
+		cprintf("sys_ipc_try_send: envid2env failed: %e \n", res);
+		return res;
+	}
+
+	if (target->env_status != ENV_NOT_RUNNABLE) {
+		//cprintf("sys_ipc_try_send: target is not currently blocked\n");
+		return -E_IPC_NOT_RECV;
+	}
+
+	if (!target->env_ipc_recving) {
+		cprintf("sys_ipc_try_send: target not prepared to recieve\n");
+		return -E_IPC_NOT_RECV;
+	}
+
+	if ((intptr_t)srcva < UTOP) {
+		if (PGOFF(srcva)) {
+			cprintf("sys_ipc_try_send:  srcva < UTOP but srcva is not page-aligned\n");
+			return -E_INVAL;
+		}
+
+		if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) {
+			cprintf("sys_ipc_try_send: PTE_U | PTE_P must be set\n");
+			return -E_INVAL;
+		}
+
+		if (perm & ~PTE_SYSCALL) {
+			cprintf("sys_ipc_try_send: no other bits other than  PTE_SYSCALL may be set\n");
+			return -E_INVAL;
+		}
+
+		src_page = page_lookup(curenv->env_pgdir, srcva, &src_pte);
+			if ((intptr_t)srcva < UTOP && !src_page) {
+			cprintf("sys_ipc_try_send:  srcva is not mapped in srcenvid's address space\n");
+			return -E_INVAL;
+		}
+
+		if (perm & PTE_W && !(*src_pte & PTE_W)) {
+			cprintf("sys_page_map: srcva is read-only in srcenvid's address space\n");
+			return -E_INVAL;
+		}
+
+		if ((intptr_t)target->env_ipc_dstva < UTOP) {
+			res = page_insert(target->env_pgdir, src_page, target->env_ipc_dstva, perm);
+			if (res < 0) {
+				cprintf("sys_page_map: page_insert failed: %e\n", res);
+				return res;
+			}
+		}
+		target->env_ipc_perm = perm;
+	} else
+		target->env_ipc_perm = 0;
+
+
+
+	target->env_ipc_recving = false;
+
+	target->env_ipc_from = curenv->env_id;
+
+	target->env_ipc_value = value;
+
+	target->env_status = ENV_RUNNABLE;
+
+	return 0;
+
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -432,7 +502,20 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_recv not implemented");
+	//panic("sys_ipc_recv not implemented");
+
+	if ((intptr_t)dstva < UTOP && PGOFF(dstva)) 
+		return -E_INVAL;
+		
+
+	curenv->env_ipc_dstva = dstva;
+
+	// Here we change the current proc status to not runnable
+	// Later, trap() function will call yieldsched() to suspend 
+	// current process
+	curenv->env_status = ENV_NOT_RUNNABLE;
+
+	curenv->env_ipc_recving = true;
 	return 0;
 }
 
@@ -475,6 +558,10 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_page_unmap((envid_t)a1, (void *)a2);
 	case SYS_env_set_pgfault_upcall:
 		return sys_env_set_pgfault_upcall(a1, (void *)a2);
+	case SYS_ipc_try_send:
+		return sys_ipc_try_send((envid_t)a1, a2, (void *)a3, a4);
+	case SYS_ipc_recv:
+		return sys_ipc_recv((void *)a1);
 	default:
 		return -E_INVAL;
 	}

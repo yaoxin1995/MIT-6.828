@@ -160,7 +160,10 @@ fork(void)
 	}
 
 	// We're the parent.
-
+	// Here we need to imitate the MMU's vitual address translation process
+	// We need to first check whether the page table is present
+	// Then we can check whethe the page is present
+	// Otherwise we may got trouble
 	for (addr = 0; addr < USTACKTOP; addr += PGSIZE) {
 		if ((uvpd[PDX(addr)] & PTE_P) == PTE_P && (uvpt[PGNUM(addr)] & PTE_P) == PTE_P)
             duppage(envid, PGNUM(addr));
