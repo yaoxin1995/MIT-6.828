@@ -21,8 +21,8 @@ syscall(int num, int check, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	// memory locations.
 
 	asm volatile("int %1\n"
-		     : "=a" (ret)
-		     : "i" (T_SYSCALL),
+		     : "=a" (ret)    // output list
+		     : "i" (T_SYSCALL),   // input list
 		       "a" (num),
 		       "d" (a1),
 		       "c" (a2),

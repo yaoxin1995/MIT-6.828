@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "kclock.h": "c",
+        "pmap.h": "c",
+        "memlayout.h": "c",
+        "error.h": "c",
+        "assert.h": "c",
+        "stdio.h": "c",
+        "console.h": "c",
+        "string.h": "c",
+        "x86.h": "c",
+        "lib.h": "c"
+    }
+}

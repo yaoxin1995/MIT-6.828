@@ -74,8 +74,15 @@ start32:
 	movl    $0x0, %ebp       # nuke frame pointer
 
 	# Call mp_main().  (Exercise for the reader: why the indirect call?)
+	# Jump to mp_main(), and switch to executing at
+  	# high addresses. The indirect call is needed because
+  	# the assembler produces a PC-relative instruction
+  	# for a direct jump.
+	# Now, AP runs in the low address, it need to excute a indirect jump 
+	# to go to high address, 
 	movl    $mp_main, %eax
 	call    *%eax
+
 
 	# If mp_main returns (it shouldn't), loop.
 spin:
