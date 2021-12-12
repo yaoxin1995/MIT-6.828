@@ -32,8 +32,11 @@ pgfault(struct UTrapframe *utf)
 	// LAB 4: Your code here.
 
 
-	if ((err & FEC_WR) != FEC_WR)
+	if ((err & FEC_WR) != FEC_WR) {
+		cprintf("[%08x] :pgfault\n", thisenv->env_id);
 		panic("pgfault:  faulting access was not a write");
+	}
+		
 	
 	ptindex = uvpt[PGNUM(addr)];
 
@@ -90,6 +93,7 @@ duppage(envid_t envid, unsigned pn)
 	int r;
 	pte_t ptindex;
 	envid_t cpro_id;
+	int perm;
 
 	// LAB 4: Your code here.
 
@@ -97,6 +101,18 @@ duppage(envid_t envid, unsigned pn)
 
 	
 	ptindex = uvpt[pn];
+
+	perm = ptindex & PTE_SYSCALL;
+
+	if (perm & PTE_SHARE) {
+		if ((r = sys_page_map(cpro_id, (void *)(pn*PGSIZE), 
+				envid, (void *)(pn*PGSIZE), perm)) < 0)
+			panic("duppage:  sys_page_alloc failed for share  page in child");
+		return 0;
+
+	}
+
+
 
 	// page is read only
 	if (!(ptindex & PTE_W) && !(ptindex & PTE_COW)) {

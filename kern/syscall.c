@@ -151,7 +151,29 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 	// LAB 5: Your code here.
 	// Remember to check whether the user has supplied us with a good
 	// address!
-	panic("sys_env_set_trapframe not implemented");
+	int res;
+	struct Env *proc;
+
+	res = envid2env(envid, &proc, 1);
+	if(res < 0) {
+		cprintf("sys_env_set_status: envid2env failed: %e", res);
+		return res;
+	}
+
+	user_mem_assert(proc, tf, sizeof(struct Trapframe), PTE_W | PTE_P | PTE_U);
+
+	tf->tf_eflags &= ~FL_IOPL_MASK;
+
+	tf->tf_eflags |= FL_IF;
+
+	tf->tf_cs |= 3;
+	tf->tf_ss |= 3;
+
+	proc->env_tf = *tf;
+	return 0;
+
+
+
 }
 
 // Set the page fault upcall for 'envid' by modifying the corresponding struct
@@ -293,52 +315,52 @@ sys_page_map(envid_t srcenvid, void *srcva,
 
 	res = envid2env(srcenvid, &src_proc, 1);
 	if(res < 0) {
-		cprintf("sys_page_map: envid2env failed on srcenvid: %e", res);
+		cprintf("sys_page_map: envid2env failed on srcenvid: %e\n", res);
 		return res;
 	}
 
 	res = envid2env(dstenvid, &dst_proc, 1);
 	if(res < 0) {
-		cprintf("sys_page_map: envid2env failed on dstenvid: %e", res);
+		cprintf("sys_page_map: envid2env failed on dstenvid: %e\n", res);
 		return res;
 	}
 
 	if ((intptr_t)srcva >= UTOP || (intptr_t)dstva >= UTOP) {
-		cprintf("sys_page_map: va >= UTOP srcva: Ox%x, dstva: Ox%x", \
+		cprintf("sys_page_map: va >= UTOP srcva: Ox%x, dstva: Ox%x\n", \
 		(intptr_t)srcva, (intptr_t)dstva);
 		return -E_INVAL;
 	}
 
 	if (PGOFF(srcva) != 0 || PGOFF(dstva) != 0) {
-		cprintf("sys_page_map: va is not page-aligned srcva: Ox%x, dstva: Ox%x", \
+		cprintf("sys_page_map: va is not page-aligned srcva: Ox%x, dstva: Ox%x\n", \
 		(intptr_t)srcva, (intptr_t)dstva);
 		return -E_INVAL;
 	}
 
 	src_page = page_lookup(src_proc->env_pgdir, srcva, &src_pte);
 	if (!src_page) {
-		cprintf("sys_page_map:  srcva is not mapped in srcenvid's address space");
+		cprintf("sys_page_map:  srcva is not mapped in srcenvid's address space\n");
 		return -E_INVAL;
 	}
 
 	if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) {
-		cprintf("sys_page_map: PTE_U | PTE_P must be set");
+		cprintf("sys_page_map: PTE_U | PTE_P must be set\n");
 		return -E_INVAL;
 	}
 
 	if (perm & ~PTE_SYSCALL) {
-		cprintf("sys_page_map: no other bits other than  PTE_SYSCALL may be set");
+		cprintf("sys_page_map: no other bits other than  PTE_SYSCALL may be set\n");
 		return -E_INVAL;
 	}
 
 	if (perm & PTE_W && !(*src_pte & PTE_W)) {
-		cprintf("sys_page_map: srcva is read-only in srcenvid's address space");
+		cprintf("sys_page_map: srcva is read-only in srcenvid's address space\n");
 		return -E_INVAL;
 	}
 
 	res = page_insert(dst_proc->env_pgdir, src_page, dstva, perm);
 	if (res < 0) {
-		cprintf("sys_page_map: page_insert failed: %e", res);
+		cprintf("sys_page_map: page_insert failed: %e\n", res);
 		return res;
 	}
 
@@ -365,17 +387,17 @@ sys_page_unmap(envid_t envid, void *va)
 
 	res = envid2env(envid, &proc, 1);
 	if(res < 0) {
-		cprintf("sys_page_unmap: envid2env failed: %e", res);
+		cprintf("sys_page_unmap: envid2env failed: %e\n", res);
 		return res;
 	}
 
 	if ((intptr_t)va >= UTOP) {
-		cprintf("sys_page_unmap: va >= UTOP Ox%x", (intptr_t)va);
+		cprintf("sys_page_unmap: va >= UTOP Ox%x\n", (intptr_t)va);
 		return -E_INVAL;
 	}
 
 	if (PGOFF(va) != 0) {
-		cprintf("sys_page_unmap: va is not page-aligned Ox%x", (intptr_t)va);
+		cprintf("sys_page_unmap: va is not page-aligned Ox%x\n", (intptr_t)va);
 		return -E_INVAL;
 	}
 
@@ -574,6 +596,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_ipc_try_send((envid_t)a1, a2, (void *)a3, a4);
 	case SYS_ipc_recv:
 		return sys_ipc_recv((void *)a1);
+
+	case SYS_env_set_trapframe:
+		return sys_env_set_trapframe((envid_t)a1, (struct Trapframe *)a2);
 	default:
 		return -E_INVAL;
 	}

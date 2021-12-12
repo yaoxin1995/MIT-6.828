@@ -9,6 +9,7 @@
         "console.h": "c",
         "string.h": "c",
         "x86.h": "c",
-        "lib.h": "c"
+        "lib.h": "c",
+        "fs.h": "c"
     }
 }

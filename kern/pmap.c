@@ -114,30 +114,13 @@ boot_alloc(uint32_t n)
 	// to a multiple of PGSIZE.
 	//
 	// LAB 2: Your code here.
-	if (!n)
-		return nextfree;
-
-	
-	temp = nextfree + n;
-
-	temp = ROUNDUP(temp, PGSIZE);
-
-	assert((uint32_t)temp % PGSIZE == 0);
-
-	pa_t = PADDR(temp);
-
-	pa_t_pagenum = pa_t / PGSIZE;
-
-	if (pa_t_pagenum > npages)
-		panic("boot_alloc: exceeding the total physical memory, n:%d, pa_n_page: %d, npages: %d",\
-			n, pa_t_pagenum, npages);
-
 	result = nextfree;
-	nextfree = temp;
-
-	cprintf("result: %x\n",
-		result);
-
+	if (n > 0) {
+    	nextfree = ROUNDUP(nextfree + n, PGSIZE);
+    	if (((uint32_t) nextfree - KERNBASE) > (npages * PGSIZE)) 
+        	panic("boot_alloc: out of memory. Requested %uK, available %uK.\n", (uint32_t) nextfree / 1024, npages * PGSIZE / 1024);
+    
+	}
 	return result;
 }
 
@@ -317,14 +300,13 @@ mem_init_mp(void)
 	//
 	// LAB 4: Your code here:
 
-	int i;
-	intptr_t start = KSTACKTOP;
+    int i;
 
-	for (i = 0; i < NCPU; i++) {
-		boot_map_region(kern_pgdir, start - KSTKSIZE, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
-		start = start - (KSTKSIZE + KSTKGAP);
+    for (i = 0; i < NCPU; i++) {
+        uint32_t kstacktop_i = KSTACKTOP - i * (KSTKSIZE + KSTKGAP);
 
-	}
+        boot_map_region(kern_pgdir, kstacktop_i - KSTKSIZE, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
+    }
 
 
 	
@@ -391,25 +373,21 @@ page_init(void)
 	}
 
 	// IO hole [IOPHYSMEM, EXTPHYSMEM)  must never be allocated.  160 <= i <250
-	for(; i < EXTPHYSMEM / PGSIZE; i++) {
-		pages[i].pp_ref = 1;
-		pages[i].pp_link = NULL;
-	}
+    for (i = IOPHYSMEM / PGSIZE; i < EXTPHYSMEM / PGSIZE; i++) {
+        pages[i].pp_ref = 1;
+    }
 
 	next_kernel_free = PADDR(nextfree) / PGSIZE;
 
-	// Pages for the kernel
-	for(; i < next_kernel_free; i++) {
-		pages[i].pp_ref = 1;
-		pages[i].pp_link = NULL;
-	}
-
-	// The rest page are free pages
-	for (; i < npages; i++) {
-		pages[i].pp_ref = 0;
-		pages[i].pp_link = page_free_list;
-		page_free_list = &pages[i];
-	}
+	for (i = EXTPHYSMEM / PGSIZE; i < npages; i++) {
+        if (i < PADDR(boot_alloc(0)) / PGSIZE) {
+            pages[i].pp_ref = 1;
+        } else {
+            pages[i].pp_ref = 0;
+            pages[i].pp_link = page_free_list;
+            page_free_list = &pages[i];
+        }
+    }
 }
 
 //
@@ -427,24 +405,19 @@ page_init(void)
 struct PageInfo *
 page_alloc(int alloc_flags)
 {
-	struct PageInfo *temp = page_free_list;
-	uintptr_t kva_page;
-	
-	
-	// Fill this function 
-	if (temp == NULL)
-		return NULL;
-	
-	page_free_list = page_free_list->pp_link;
+	struct PageInfo *result;
 
-	temp->pp_link = NULL;
+    if (page_free_list == NULL) {
+        return NULL;
+    }
 
-	if (alloc_flags & ALLOC_ZERO) {
-		kva_page = (uintptr_t)page2kva(temp);
-		memset((uintptr_t *)kva_page, 0, PGSIZE);
-	}
-		
-	return temp;
+    result = page_free_list;
+    page_free_list = page_free_list->pp_link;
+    result->pp_link = NULL;
+    if (alloc_flags & ALLOC_ZERO) {
+        memset(page2kva(result), 0, PGSIZE);
+    }
+    return result;
 }
 
 //
@@ -542,24 +515,17 @@ static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
 	// Fill this function in
-	size_t i;
-	pte_t *pte;
-	char *start, last;
+    size_t i;
+    for (i = 0; i < size / PGSIZE; i++) {
+        pte_t *pte;
 
-	for (i = 0; i < size; i += PGSIZE) {
-		if ((pte = pgdir_walk(pgdir, (intptr_t *)va, 1)) == NULL) {
-			panic("boot_map_region: pgdir_walk failed i: %d, uintptr_t", i, va);
-			return;
-		}
-
-		if (*pte & PTE_P)
-			panic("boot_map_region: remap");
-		
-		*pte = pa | perm | PTE_P;
-
-		va += PGSIZE;
-		pa += PGSIZE;
-	}
+        if ((pte = pgdir_walk(pgdir, (void *)va, 1)) == NULL) {
+            panic("boot_map_region: allocation failure");
+        }
+        *pte = pa | perm | PTE_P;
+        va += PGSIZE;
+        pa += PGSIZE;
+    }
 
 }
 
@@ -631,21 +597,15 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 
 	// Fill this function in
 
-	pte_t *pg_entry;
-	struct  PageInfo *page;
-	
+    pte_t *pte;
 
-	if((pg_entry = pgdir_walk(pgdir, va, 0)) == 0) 
-		//panic("page_lookup: no page mapped at va");
-		return NULL;
-	page = pa2page(PTE_ADDR(*pg_entry));
-
-	//If pte_store is not zero, then we store in it the address
-	// of the pte for this page.
-	if (pte_store)
-		*pte_store = pg_entry;
-	
-	return page;
+    if ((pte = pgdir_walk(pgdir, va, 0)) == NULL || (*pte & PTE_P) == 0) {
+        return NULL;
+    }
+    if (pte_store) {
+        *pte_store = pte;
+    }
+    return pa2page(PTE_ADDR(*pte));
 }
 
 //
