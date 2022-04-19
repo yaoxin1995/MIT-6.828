@@ -13,3 +13,6 @@ The operating system you will build, called JOS, will have Unix-like functions (
 + Preemptive multitasking
 + File system, spawn, and shell
 + Network driver
+
+
+# For the implementation of xv6 and jos, please see the branches
