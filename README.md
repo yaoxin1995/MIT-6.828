@@ -16,4 +16,17 @@ The operating system you will build, called JOS, will have Unix-like functions (
 
 
 # For the implementation of xv6 and jos, please see the branches
-[hw1](https://github.com/yaoxin1995/MIT-6.828/tree/hw1)
+## Home work
++ [hw1](https://github.com/yaoxin1995/MIT-6.828/tree/hw1)
++ [hw2](https://github.com/yaoxin1995/MIT-6.828/tree/hw2)
++ [hw3](https://github.com/yaoxin1995/MIT-6.828/tree/hw3)
++ [hw4](https://github.com/yaoxin1995/MIT-6.828/tree/hw4)
++ [hw5](https://github.com/yaoxin1995/MIT-6.828/tree/hw5)
++ [hw6](https://github.com/yaoxin1995/MIT-6.828/tree/hw6)
+
+## Lab
++ [lab1](https://github.com/yaoxin1995/MIT-6.828/tree/lab1)
++ [lab2](https://github.com/yaoxin1995/MIT-6.828/tree/lab2)
++ [lab3](https://github.com/yaoxin1995/MIT-6.828/tree/lab3)
++ [lab4](https://github.com/yaoxin1995/MIT-6.828/tree/lab4)
++ [lab5](https://github.com/yaoxin1995/MIT-6.828/tree/lab5)
